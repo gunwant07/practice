@@ -1,0 +1,52 @@
+1)https://prometheus.io/download/
+2) wget paste link
+3)tar -xvf filename
+4)rm the promethous
+5) cd go inside the file okk
+6)./prometheus &
+7)it runs on 9090
+8)https://grafana.com/grafana/download
+9)sudo /bin/systemctl start grafana-server
+10) wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.28.0/blackbox_exporter-0.28.0.linux-amd64.tar.gz for blackbox
+11)tar -xvf follow the similar process to do this
+12)cd go inside this you will ./blackbox_exporter &
+13)access it on 9115
+15)goto prometheous.yml edit it
+- job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response.
+    static_configs:
+      - targets:
+        - http://prometheus.io    # Target to probe with http.
+        - https://prometheus.io   # Target to probe with https.
+        - http://example.com:8080 # Target to probe with http on port 8080.
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 127.0.0.1:9115  
+15)paste application as http://13.233.168.109:5000
+16)preg prometheus 
+17)youl will get id then kill it kill id
+18)./prometheus &
+19)got tom status targets inside promethous app
+20)go t connections data sources prometheus select promethous paste url with /
+21)click on plus above import dashboard gotot google search garafana dashboard click first link copy the  id paste load the prometheous okay done
+22)goto jenkins plugins add prometheou metrics
+23) go to grometheous.io/download select node expporter ok good one copy link repeat wget and tar step 
+24)./node_exporter &
+25)go to promethous.yml in server 2 paste it
+- job_name: 'node_exporter'
+    static_configs:
+      - targets: ['13.201.167.137:9100']
+
+  - job_name: 'jenkins'
+    metrics_path: '/prometheus'
+    static_configs:
+      - targets: ['13.201.167.137:8080']
+26)pgrep prometheus then resrat using ./promethous &
+25)save dashboard create new id is 1860
+7587

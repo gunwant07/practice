@@ -1,0 +1,199 @@
+1)https://docs.docker.com/engine/install/ubuntu/
+2)https://www.jenkins.io/doc/book/installing/linux/
+3)sudo usermod -aG docker jenkins
+4)sudo systemctl restart jenkins
+5)docker run -d --name=sonar -p  9000:9000 sonarqube:lts-community
+6)jenkins plugins sonarqube scanner 
+7)/sonar-project.properties
+sonar.projectKey=i18next-tutorial
+sonar.projectName=i18next-tutorial
+sonar.projectVersion=1.0
+
+sonar.sources=src
+sonar.language=js
+sonar.sourceEncoding=UTF-8
+sonar.exclusions=*/node_modules/*
+
+8)tools install automaticaly sonar-scanner
+9)sonarqube installation system give name MySonarQube generate token sonarqube adminsrtaion security users 
+10) add jenkins password scret text
+11) go to the ses create identitires verify the both email you want to send receive the email addresss
+12)smtp settengs create smtp cred
+13)copy smtp endpoint then 
+14) configure jenkins nonody set it your defaut email verified then just go to the smtp setup set it to 587 tls check it set usename and password remeber this also use smtp authentication 2.0
+sudo apt update && sudo apt install -y nodejs npm
+pipeline {
+    agent any
+
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner' // Jenkins-managed sonar-scanner
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/gunwant07/i18next-tutorial-yt.git', branch: 'main'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('MySonarQube') {
+                    sh "${SCANNER_HOME}/bin/sonar-scanner"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t app .'
+            }
+        }
+    }
+
+    post {
+        success {
+            mail to: 'gunwantwaghay2611@gmail.com',
+                 subject: "✅ Jenkins Pipeline Success: i18next-tutorial-yt",
+                 body: "The Jenkins pipeline completed successfully. The application was built and Docker image 'app' was created."
+        }
+        failure {
+            mail to: 'gunwantwaghay2611@gmail.com',
+                 subject: "❌ Jenkins Pipeline Failed: i18next-tutorial-yt",
+                 body: "The Jenkins pipeline failed. Please check the Jenkins console output for details."
+        }
+    }
+}
+
+
+
+15) then docker swarm init 
+14)vim prometheus.yml
+15)global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'cadvisor'
+    dns_sd_configs:
+      - names: ['tasks.cadvisor']
+        type: 'A'
+        port: 8080
+
+  - job_name: 'jenkins'
+    static_configs:
+      - targets: ['65.0.93.138:8080']
+16)docker config create prometheus_config prometheus.yml
+17)vim docker-stack.yml
+18)version: '3.8'
+
+services:
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: Aditya
+      MYSQL_DATABASE: crud_app
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  backend:
+    image: backend-svc
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+
+  frontend:
+    image: frontend-app
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - target: 8080
+        published: 8080
+        mode: host
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
+
+volumes:
+  mysql-data:
+
+configs:
+  prometheus_config:
+    external: true
+19)docker stack deploy -c docker-stack.yml monitoring
+[10:58 AM, 1/3/2026] Grind: version: '3.8'
+
+services:
+  web:
+    image: app
+    ports:
+      - "3000:3000"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: overlay
+[11:04 AM, 1/3/2026] Grind: docker stack services mystack
+[11:04 AM, 1/3/2026] Grind: docker ps
+[11:04 AM, 1/3/2026] Grind: docker logs <container_id>

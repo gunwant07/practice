@@ -1,0 +1,89 @@
+1)eclipse temurian installer
+config file provider 
+maven intergration 
+pipeline maven integration
+sonarqube scanner
+2)tools jdk installation install automatically jdk17
+maven maven3 
+sonarqube name sonar-scanner
+3)configure section add sonar cube server and just setup the smtp
+change java version if error comes via jdk use jdk11 20.8.0 for older application
+pipeline {
+    agent any
+
+    tools {
+        jdk 'Jdk11'
+        maven 'maven3'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git url: 'https://github.com/jaiswaladi246/Boardgame.git', branch: 'main'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=BoardGame \
+                        -Dsonar.projectKey=BoardGame \
+                        -Dsonar.java.binaries=.
+                    '''
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                script {
+                    echo "🎨 Building frontend Docker image..."
+                    sh 'docker build -t app .'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            mail to: 'gunwantwaghay2611@gmail.com',
+                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The Jenkins pipeline completed successfully.\n\nCheck details: ${env.BUILD_URL}"
+        }
+        failure {
+            mail to: 'gunwantwaghay2611@gmail.com',
+                 subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The Jenkins pipeline failed.\n\nCheck details: ${env.BUILD_URL}"
+        }
+    }
+}
+4) change the src main application.roperties add this line in the end server.address=0.0.0.0
+server.port=5000
+docker swarm init 
+5)vim docker-stack.yml
+6)services:
+  backend:
+    image: app:latest
+    ports:
+      - target: 5000
+        published: 5000
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+7)docker stack deploy -c docker-stack.yml application
+8)docker service ls to check services
