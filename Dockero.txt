@@ -1,0 +1,88 @@
+ FROM python:3.11-slim
+
+WORKDIR /app
+COPY . /app
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD ["python", "app.py"]
+ FROM node:20-alpine
+
+WORKDIR /app
+COPY . /app
+
+RUN npm install
+
+CMD ["node", "index.js"]
+ FROM eclipse-temurin:21-jdk-alpine
+
+WORKDIR /app
+COPY target/app.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+ FROM golang:1.21-alpine AS builder
+
+WORKDIR /app
+COPY . .
+RUN go build -o app
+
+FROM alpine:latest
+WORKDIR /app
+COPY --from=builder /app/app .
+
+CMD ["./app"]
+ FROM ruby:3.2-alpine
+
+WORKDIR /app
+COPY . /app
+
+RUN bundle install
+
+CMD ["ruby", "app.rb"]
+ FROM rust:1.74 as builder
+
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+WORKDIR /app
+COPY --from=builder /app/target/release/app .
+
+CMD ["./app"]
+ FROM php:8.2-apache
+
+COPY . /var/www/html/
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+EXPOSE 80
+ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "YourApp.dll"]
+
+docker run -d \
+  --name mysql-db \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_DATABASE=app_db \
+  -e MYSQL_USER=app_user \
+  -e MYSQL_PASSWORD=app_pass \
+  -p 3306:3306 \
+  -v mysql_data:/var/lib/mysql \
+  mysql:8.3
+[10:51 AM, 1/4/2026] Grind: grep -Rin 'port' . any
+[10:51 AM, 1/4/2026] Grind: grep -Rin 'listen' . node 
+[10:51 AM, 1/4/2026] Grind: grep -Rin 'server.port' . java
+[10:51 AM, 1/4/2026] Grind: grep -Rin 'run(' . python
+[11:11 AM, 1/4/2026] Grind: grep -rEo 'https?://[^"]+' .
+[11:12 AM, 1/4/2026] Grind: grep -rEo --exclude-dir=.git '(https?|ftp)://[^"]+' .
